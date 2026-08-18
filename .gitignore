@@ -1,0 +1,10 @@
+# python
+__pycache__/
+*.pyc
+
+# env
+.env
+.venv/
+
+# generated
+receipts.csv
