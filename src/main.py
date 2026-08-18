@@ -1,4 +1,5 @@
 from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 import os
 
@@ -8,28 +9,33 @@ client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY")
 )
 
-with open("receipt.jpg", "rb") as f:
+with open("receipts/image.jpeg", "rb") as f:
     image_bytes = f.read()
 
 prompt = """
-レシートから以下のJSONのみ出力してください
+このレシートから情報を抽出してください。
+
+以下のJSONのみを出力してください。
 
 {
-  "purchase_date":"",
-  "store":"",
-  "total_amount":0
+  "purchase_date": "",
+  "store": "",
+  "total_amount": 0
 }
+
+JSON以外出力しないこと。
 """
 
 response = client.models.generate_content(
-    model="gemini-2.5-flash",
+    model="gemini-3.6-flash",
     contents=[
         prompt,
-        {
-            "mime_type": "image/jpeg",
-            "data": image_bytes,
-        }
-    ]
+        types.Part.from_bytes(
+            data=image_bytes,
+            mime_type="image/jpeg",
+        ),
+    ],
 )
+
 
 print(response.text)

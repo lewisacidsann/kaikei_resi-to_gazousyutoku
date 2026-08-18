@@ -8,3 +8,5 @@ __pycache__/
 
 # generated
 receipts.csv
+
+receipts/*
