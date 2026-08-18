@@ -10,3 +10,4 @@ __pycache__/
 receipts.csv
 
 receipts/*
+done/*
