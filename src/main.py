@@ -57,13 +57,14 @@ writer = csv.writer(csv_file)
 
 if not file_exists:
     writer.writerow([
+        "通し番号",
         "購入日",
-        "購入先",
-        "送料",
-        "合計金額",
         "品名",
         "単価",
         "数量",
+        "送料",
+        "その品目の合計金額",
+        "購入先",
     ])
 
 # =========================
@@ -79,12 +80,11 @@ prompt = """
   "purchase_date": "",
   "store": "",
   "shipping_fee": 0,
-  "total_amount": 0,
   "items": [
     {
       "name": "",
       "unit_price": 0,
-      "quantity": 0
+      "quantity": 1
     }
   ]
 }
@@ -93,16 +93,21 @@ prompt = """
 - JSON以外出力しない
 - 日付は YYYY-MM-DD
 - 金額は数値のみ
-- 分からない場合は null
+- quantity が不明なら 1
+- unit_price が不明なら 0
+- shipping_fee が無い場合は 0
+- store が不明なら ""
 """
 
 # =========================
-# 画像ごとに処理
+# レシート処理
 # =========================
 
 for image_path in images:
 
     print(f"\n処理中: {image_path}")
+
+    receipt_id = image_path.stem
 
     with open(image_path, "rb") as f:
         image_bytes = f.read()
@@ -138,9 +143,11 @@ for image_path in images:
             print(e)
 
             if attempt == MAX_RETRY - 1:
+
                 print(
                     f"{image_path} をスキップ"
                 )
+
                 response = None
                 break
 
@@ -157,7 +164,6 @@ for image_path in images:
 
         print("JSON変換失敗")
         print(e)
-
         continue
 
     print(
@@ -173,27 +179,34 @@ for image_path in images:
     if len(items) == 0:
 
         writer.writerow([
+            receipt_id,
             data.get("purchase_date"),
-            data.get("store"),
+            "",
+            "",
+            "",
             data.get("shipping_fee"),
-            data.get("total_amount"),
             "",
-            "",
-            "",
+            data.get("store"),
         ])
 
         continue
 
     for item in items:
 
+        unit_price = item.get("unit_price") or 0
+        quantity = item.get("quantity") or 1
+
+        item_total = unit_price * quantity
+
         writer.writerow([
-            data.get("purchase_date"),
-            data.get("store"),
-            data.get("shipping_fee"),
-            data.get("total_amount"),
-            item.get("name"),
-            item.get("unit_price"),
-            item.get("quantity"),
+            receipt_id,                    # 通し番号
+            data.get("purchase_date"),     # 購入日
+            item.get("name"),              # 品名
+            unit_price,                    # 単価
+            quantity,                      # 数量
+            data.get("shipping_fee"),      # 送料
+            item_total,                    # 品目合計
+            data.get("store"),             # 購入先
         ])
 
 csv_file.close()
